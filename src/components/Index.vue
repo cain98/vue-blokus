@@ -1,9 +1,11 @@
 <template>
   <div class="container" :class="{ active: activePiece !== false}">
+    <div class="click-overlay" @click="unselect()">
+    </div>
     <div class="board">
-      <div v-for="row, i in rows" v-bind:key="i + 'row'" class="row">
-        <div v-for="col, x in cols" class="grid" v-bind:key="row">
-          {{ x + 1 }}
+      <div v-for="row in rows" v-bind:key="row" class="row">
+        <div v-for="col in cols" class="grid" v-bind:key="col">
+
         </div>
       </div>
     </div>
@@ -11,31 +13,33 @@
       <div class="block"
       v-for="block in blocks"
       :ref="block.id"
+      v-bind:key="block.id"
       @click="selectPiece(block)"
-      v-bind:style="{ height: `${block.grid.y * 20}px`, width: `${block.grid.x * 20}px` }">
-        <div class="piece" v-for="piece in block.pieces">
+      v-bind:style="{ height: `${block.grid.y * 20}px`, width: `${block.grid.x * 20}px`, top: `${block.y - 20}px`, left: `${block.x - 20}px`}">
+        <div
+        class="piece"
+        v-for="piece in block.pieces"
+        v-bind:key="block.id + 'x' + piece.x + 'y' + piece.y"
+        v-bind:style="{ left: `${(piece.x - 1) * 20}px`, top: `${(piece.y - 1) * 20}px` }"
+        >
+          {{piece.id}}
         </div>
       </div>
     </div>
   </div>
 </template>
 
-
 <script>
+import blocks from '../blocks'
 export default {
-  name: 'HelloWorld',
+  name: 'Index',
   data () {
     return {
-      rows: Array(20),
-      cols: Array(20),
+      rows: Array.apply(null, Array(20)).map(function (x, i) { return i }),
+      cols: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       activePiece: false,
-      blocks: [
-        {
-          id: 1,
-          grid: {x: 1, y: 3},
-          pieces: [{x: 1, y: 1}, {x: 1, y: 2}, {x: 1, y: 2}]
-        }
-      ]
+      blocks: blocks,
+      isInsideBoard: false
     }
   },
   mounted () {
@@ -43,10 +47,29 @@ export default {
       if (this.activePiece) {
         const mouse = this.mousePosition()
         const el = this.$refs[this.activePiece.id][0]
+        var rect = el.getBoundingClientRect()
+        console.log(rect.top, rect.right, rect.bottom, rect.left)
+        if (rect.right <= 420 && rect.right >= 20 &&
+          rect.bottom <= 420 && rect.bottom >= 20 &&
+          rect.left <= 420 && rect.left >= 20 &&
+          rect.top <= 420 && rect.top >= 20) {
+          if (!this.isInsideBoard) {
+            this.isInsideBoard = true
+          }
+        } else {
+          if (this.isInsideBoard) {
+            this.isInsideBoard = false
+          }
+        }
+        console.log(this.isInsideBoard)
+
+        const index = this.blocks.findIndex(x => x.id === this.activePiece.id)
         el.classList.add('dragging')
         const x = Math.round(mouse.x / 20) * 20
         const y = Math.round(mouse.y / 20) * 20
-        el.setAttribute('style', `top: ${y - 20}px; left: ${x - 20}px`)
+        this.blocks[index].x = x
+        this.blocks[index].y = y
+        // el.setAttribute('style', `top: ${y - 20}px; left: ${x - 20}px`)
       }
     }, false)
   },
@@ -132,8 +155,9 @@ a {
 
 .block {
   cursor: pointer;
-  padding: 20px;
-  opacity: 0.5;
+  /* padding: 20px; */
+  opacity: 0.35;
+  position: relative;
 }
 .dragging {
   position: absolute;
@@ -143,6 +167,7 @@ a {
 
 .board {
   outline: 1px solid grey;
+  outline-offset: -1px;
 }
 
 .dragging .piece, .block:hover {
@@ -154,8 +179,21 @@ a {
   background: red;
   color: white;
   font-size: 8px;
+  max-width: 20px;
+  position: absolute;
+  outline: 2px solid rgba(0,0,0,0.4);
+  outline-offset: -3px;
+}
+.selection {
+  width: 100%;
+display: flex;
 }
 
+.click-overlay {
+  width: 100%;
+    position: absolute;
+    height: 100%;
+}
 .row {
   display: flex;
   /* justify-content: center; */
