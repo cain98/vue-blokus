@@ -14,8 +14,9 @@ export default {
 body{
   margin: 0px;
   background-color: transparent;
-  background-size: 20px 20px;
+  background-size: 40px 40px;
   background-image: linear-gradient(to right, #e7e7e7 1px, transparent 1px), linear-gradient(to bottom, #e7e7e7 1px, transparent 1px);
+
 }
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
