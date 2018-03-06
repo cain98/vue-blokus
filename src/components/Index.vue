@@ -1,28 +1,26 @@
 <template>
-  <div class="container" :class="{ active: activePiece !== false}">
-
+  <div>
     <div class="click-overlay" @click="unselect()">
     </div>
-
-    <div class="board">
-      <div v-for="row in rows" v-bind:key="row" class="row">
-        <div v-for="col in cols" class="grid" v-bind:key="col">
+    <div class="container" :class="{ active: activePiece !== false}">
+      <div class="board">
+        <div v-for="row in rows" v-bind:key="row" class="row">
+          <div v-for="col in cols" class="grid" v-bind:key="col">
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="selection">
-      <block
-        v-for="block in blocks"
-        :ref="block.id"
-        :block="block"
-        :GRID_SIZE="GRID_SIZE"
-        :onClick="selectPiece"
-        v-bind:key="block.id" />
+      <div class="selection">
+        <block
+          v-for="block in blocks"
+          :ref="block.id"
+          :block="block"
+          :GRID_SIZE="GRID_SIZE"
+          :onClick="selectPiece"
+          v-bind:key="block.id" />
+      </div>
     </div>
-
   </div>
-
 </template>
 
 <script>
@@ -68,7 +66,6 @@ export default {
 
         // Find selected block
         const el = this.$refs[this.activePiece.id][0].$el
-        this.highlightPosition(el)
         el.classList.add('dragging')
 
         // Set selectedBlock axis
@@ -79,12 +76,19 @@ export default {
     mousePosition: function () {
       return cursorPosition()
     },
-    highlightPosition: function (el) {
-      const rect = el.getBoundingClientRect()
-      if (rect.right <= (20 * GRID_SIZE) + GRID_SIZE && rect.right >= GRID_SIZE &&
-        rect.bottom <= (20 * GRID_SIZE) + GRID_SIZE && rect.bottom >= GRID_SIZE &&
-        rect.left <= (20 * GRID_SIZE) + GRID_SIZE && rect.left >= GRID_SIZE &&
-        rect.top <= (20 * GRID_SIZE) + GRID_SIZE && rect.top >= GRID_SIZE) {
+    getActiveElement: function () {
+      return this.$refs[this.activePiece.id][0].$el
+    },
+    highlightPosition: function () {
+      const el = this.getActiveElement()
+      const rect = this.getOffset(el)
+      const topRightGrid = {x: rect.left / GRID_SIZE, y: rect.top / GRID_SIZE}
+      const topLeftGrid = {
+        x: (rect.left + ((this.activePiece.grid.x - 1) * GRID_SIZE)) / GRID_SIZE,
+        y: (rect.top + ((this.activePiece.grid.y - 1) * GRID_SIZE)) / GRID_SIZE
+      }
+      console.log(topRightGrid, topLeftGrid)
+      if (el) {
         if (!this.isInsideBoard) {
           this.isInsideBoard = true
         }
@@ -101,9 +105,20 @@ export default {
         this.activePiece = block
       }
     },
+    getOffset: function (el) {
+      el = el.getBoundingClientRect()
+      return {
+        left: el.left + window.scrollX,
+        top: el.top + window.scrollY
+      }
+    },
     isPlacementValid: function () {
+      const el = this.getActiveElement()
+      const rect = this.getOffset(el)
+      // console.log(rect.left / GRID_SIZE, rect.top / GRID_SIZE)
     },
     unselect: function () {
+      this.highlightPosition()
       if (this.isInsideBoard) {
         this.isPlacementValid()
       } else {
@@ -121,6 +136,7 @@ export default {
   .container {
     display: flex;
     padding: $block-size;
+    position: relative;
   }
 .grid {
   min-width: $block-size;
@@ -138,6 +154,7 @@ export default {
 .board {
   outline: 1px solid grey;
   outline-offset: -1px;
+  box-shadow: 0px 0px 21px -4px rgba(168, 168, 168, 0.75)
 }
 
 .dragging .piece, .block:hover {
@@ -145,13 +162,15 @@ export default {
 }
 
 .selection {
-  width: 100%;
+  margin-left: $block-size;
   display: flex;
+  flex-direction: column;
+  justify-content: space-around;
 }
 
 .click-overlay {
     width: 100%;
-    position: absolute;
+    position: fixed;
     height: 100%;
 }
 .row {
