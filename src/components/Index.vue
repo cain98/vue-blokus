@@ -1,24 +1,52 @@
 <template>
   <div>
-    <div class="click-overlay" @click="unselect()">
-    </div>
     <div class="container" :class="{ active: activePiece !== false}">
-      <div class="board">
+
+      <!-- Click Overlay -->
+      <div class="click-overlay" v-if="activePiece" @click="unselect()">
+      </div>
+
+      <!-- Board -->
+      <div class="board" :style="{ top: `${gridCords.y * GRID_SIZE}px`, left: `${gridCords.x * GRID_SIZE}px` }">
         <div v-for="row in rows" v-bind:key="row" class="row">
           <div v-for="col in cols" class="grid" v-bind:key="col">
           </div>
         </div>
       </div>
 
-      <div class="selection">
-        <block
-          v-for="block in blocks"
-          :ref="block.id"
-          :block="block"
-          :GRID_SIZE="GRID_SIZE"
-          :onClick="selectPiece"
-          v-bind:key="block.id" />
-      </div>
+      <!-- Blocks -->
+      <block
+        v-for="block in blocks.RED"
+        :team="block.team"
+        :ref="block.id + block.team"
+        :block="block"
+        :GRID_SIZE="GRID_SIZE"
+        :onClick="selectPiece"
+        v-bind:key="block.id + block.team" />
+      <block
+        v-for="block in blocks.BLUE"
+        :team="block.team"
+        :ref="block.id + block.team"
+        :block="block"
+        :GRID_SIZE="GRID_SIZE"
+        :onClick="selectPiece"
+        v-bind:key="block.id + block.team" />
+      <block
+        v-for="block in blocks.GREEN"
+        :team="block.team"
+        :ref="block.id + block.team"
+        :block="block"
+        :GRID_SIZE="GRID_SIZE"
+        :onClick="selectPiece"
+        v-bind:key="block.id + block.team" />
+      <block
+        v-for="block in blocks.YELLOW"
+        :ref="block.id + block.team"
+        :team="block.team"
+        :block="block"
+        :GRID_SIZE="GRID_SIZE"
+        :onClick="selectPiece"
+        v-bind:key="block.id + block.team" />
     </div>
   </div>
 </template>
@@ -28,7 +56,13 @@ import BLOCKS from '../blocks'
 import cursorPosition from '../utilities/cursorPosition'
 
 import block from './block'
-const GRID_SIZE = 40
+import config from '../config'
+const TEAMS = {
+  RED: 'RED',
+  BLUE: 'BLUE',
+  GREEN: 'GREEN',
+  YELLOW: 'YELLOW'
+}
 export default {
   name: 'Index',
   components: {
@@ -36,38 +70,41 @@ export default {
   },
   data () {
     return {
-      GRID_SIZE: GRID_SIZE,
-      blocks: BLOCKS,
+      GRID_SIZE: config.GRID_SIZE,
+      blocks: {
+        [TEAMS.RED]: BLOCKS(TEAMS.RED),
+        [TEAMS.BLUE]: BLOCKS(TEAMS.BLUE),
+        [TEAMS.GREEN]: BLOCKS(TEAMS.GREEN),
+        [TEAMS.YELLOW]: BLOCKS(TEAMS.YELLOW)
+      },
       rows: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       cols: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       activePiece: false,
-      isInsideBoard: false,
-      isHighlightValid: false
+      board: [],
+      gridCords: {x: 0, y: 0}
     }
   },
   mounted () {
     document.addEventListener('mousemove', () => {
       this.controller()
     }, false)
+    this.gridCords = {
+      x: Math.round(Math.round(Math.round(window.innerWidth / config.GRID_SIZE) / 2 - 10)),
+      y: Math.round(Math.round(Math.round(window.innerHeight / config.GRID_SIZE) / 2 - 10))
+    }
   },
   methods: {
     controller: function () {
       if (this.activePiece) {
         // Calculate grid positioning
         const mouse = this.mousePosition()
-        const x = Math.round(mouse.x / GRID_SIZE) * GRID_SIZE
-        const y = Math.round(mouse.y / GRID_SIZE) * GRID_SIZE
-        const activeBlock = this.blocks.find(x => x.id === this.activePiece.id)
-
+        const x = Math.round(mouse.x / config.GRID_SIZE) * config.GRID_SIZE
+        const y = Math.round(mouse.y / config.GRID_SIZE) * config.GRID_SIZE
+        const activeBlock = this.blocks[this.activePiece.team].find(x => x.id === this.activePiece.id)
         // Trigger ONLY on grid change
         if (x === activeBlock.x && y === activeBlock.y) {
           return
         }
-
-        // Find selected block
-        const el = this.$refs[this.activePiece.id][0].$el
-        el.classList.add('dragging')
-
         // Set selectedBlock axis
         activeBlock.x = x
         activeBlock.y = y
@@ -77,26 +114,11 @@ export default {
       return cursorPosition()
     },
     getActiveElement: function () {
-      return this.$refs[this.activePiece.id][0].$el
+      return this.$refs[this.activePiece.id + this.activePiece.team][0].$el
     },
-    highlightPosition: function () {
-      const el = this.getActiveElement()
-      const rect = this.getOffset(el)
-      const topRightGrid = {x: rect.left / GRID_SIZE, y: rect.top / GRID_SIZE}
-      const topLeftGrid = {
-        x: (rect.left + ((this.activePiece.grid.x - 1) * GRID_SIZE)) / GRID_SIZE,
-        y: (rect.top + ((this.activePiece.grid.y - 1) * GRID_SIZE)) / GRID_SIZE
-      }
-      console.log(topRightGrid, topLeftGrid)
-      if (el) {
-        if (!this.isInsideBoard) {
-          this.isInsideBoard = true
-        }
-      } else {
-        if (this.isInsideBoard) {
-          this.isInsideBoard = false
-        }
-      }
+    dropBlock: function () {
+      // const el = this.getActiveElement()
+      // const blockGrid = this.getBlockGrid(el)
     },
     selectPiece: function (block) {
       if (block.id === this.activePiece.id) {
@@ -105,39 +127,29 @@ export default {
         this.activePiece = block
       }
     },
-    getOffset: function (el) {
+    getBlockGrid: function (el) {
       el = el.getBoundingClientRect()
       return {
-        left: el.left + window.scrollX,
-        top: el.top + window.scrollY
+        left: (el.left + window.scrollX) / config.GRID_SIZE,
+        right: (el.right) / config.GRID_SIZE,
+        bottom: (el.bottom) / config.GRID_SIZE,
+        top: (el.top + window.scrollY) / config.GRID_SIZE
       }
-    },
-    isPlacementValid: function () {
-      const el = this.getActiveElement()
-      const rect = this.getOffset(el)
-      // console.log(rect.left / GRID_SIZE, rect.top / GRID_SIZE)
     },
     unselect: function () {
-      this.highlightPosition()
-      if (this.isInsideBoard) {
-        this.isPlacementValid()
-      } else {
-        this.activePiece = false
-      }
+      this.dropBlock()
+      this.activePiece = false
     }
   }
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss" scoped >
-
-  $block-size: 40px;
-  .container {
-    display: flex;
-    padding: $block-size;
-    position: relative;
-  }
+$block-size: 20px;
+.container {
+  position: relative;
+  min-height: 100%;
+}
 .grid {
   min-width: $block-size;
   min-height: $block-size;
@@ -147,35 +159,44 @@ export default {
 
 .dragging {
   position: absolute;
-  /* cursor: none; */
-
 }
 
 .board {
   outline: 1px solid grey;
   outline-offset: -1px;
-  box-shadow: 0px 0px 21px -4px rgba(168, 168, 168, 0.75)
+  box-shadow: 0px 0px 21px -4px rgba(168, 168, 168, 0.75);
+  background-size: 20px 20px;
+  position: absolute;
+  background-image: linear-gradient(to right, #e7e7e7 1px, transparent 1px), linear-gradient(to bottom, #e7e7e7 1px, transparent 1px);
+
+  // Board colour corners
+  .row:last-child .grid:last-child {
+    background: rgba(255, 0, 0, 0.45);
+  }
+  .row:last-child .grid:first-child {
+    background: rgba(255, 255, 0, 0.45);
+  }
+  .row:first-child .grid:first-child {
+    background: rgba(0, 255, 0, 0.45);
+  }
+  .row:first-child .grid:last-child {
+    background: rgba(0, 0, 255, 0.45);
+  }
 }
 
 .dragging .piece, .block:hover {
   opacity: 1;
 }
 
-.selection {
-  margin-left: $block-size;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-}
-
 .click-overlay {
-    width: 100%;
-    position: fixed;
-    height: 100%;
+  width: 100%;
+  position: fixed;
+  height: 100%;
+  z-index: 999;
+  cursor: none;
 }
 .row {
   display: flex;
-  /* justify-content: center; */
   align-items: center;
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
   <div class="block"
   @click="onClick(block)"
-  v-bind:style="{ height: `${block.grid.y * GRID_SIZE}px`, width: `${block.grid.x * GRID_SIZE}px`, top: `${block.y}px`, left: `${block.x}px`}">
+  v-bind:style="{ top: `${block.y}px`, left: `${block.x}px`}">
     <div
     class="piece"
     v-for="piece in block.pieces"
     v-bind:key="block.id + 'x' + piece.x + 'y' + piece.y"
-    v-bind:style="{ left: `${(piece.x - 1) * GRID_SIZE}px`, top: `${(piece.y - 1) * GRID_SIZE}px` }"
+    v-bind:style="{ left: `${(piece.x - 1) * GRID_SIZE}px`, top: `${(piece.y - 1) * GRID_SIZE}px`, background: team }"
     >
       {{piece.id}}
     </div>
@@ -17,16 +17,15 @@
 
 export default {
   name: 'block',
-  props: ['block', 'GRID_SIZE', 'onClick']
+  props: ['block', 'GRID_SIZE', 'onClick', 'team']
 }
 </script>
 
 <style lang="scss">
-  $block-size: 40px;
+  $block-size: 20px;
   .block {
     cursor: pointer;
-    /* padding: $block-size; */
-    opacity: 0.35;
+    opacity:1;
     position: relative;
   }
   .piece {
@@ -37,7 +36,8 @@ export default {
     font-size: 8px;
     max-width: $block-size;
     position: absolute;
-    outline: 2px solid rgba(0,0,0,0.4);
-    outline-offset: -5px;
+    outline: 1px solid rgba(0,0,0,1);
+    outline-offset: -1px;
+    box-shadow: 0px 0px 21px -4px rgba(0,0,0,1);
   }
 </style>
