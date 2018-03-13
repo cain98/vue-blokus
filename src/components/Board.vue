@@ -68,6 +68,14 @@ export default {
   components: {
     block
   },
+  sockets: {
+    connected: function () {
+      console.log('socket connected')
+    },
+    customEmit: function (val) {
+      console.log('this method fired by socket server. eg: io.emit("customEmit", data)')
+    }
+  },
   data () {
     return {
       GRID_SIZE: config.GRID_SIZE,
@@ -108,6 +116,7 @@ export default {
         // Set selectedBlock axis
         activeBlock.x = x
         activeBlock.y = y
+        this.$socket.emit('block_move', {block: activeBlock})
       }
     },
     mousePosition: function () {
@@ -125,6 +134,7 @@ export default {
         this.unselect()
       } else {
         this.activePiece = block
+        this.$socket.emit('block_select', {block})
       }
     },
     getBlockGrid: function (el) {
