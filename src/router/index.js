@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Lobby from '@/components/Lobby'
-import Board from '@/components/Board'
+import Room from '@/components/Room'
 
 Vue.use(Router)
 
@@ -13,9 +13,9 @@ export default new Router({
       component: Lobby
     },
     {
-      path: '/board/:id',
-      name: 'board',
-      component: Board
+      path: '/room/:id',
+      name: 'room',
+      component: Room
     }
   ]
 })
