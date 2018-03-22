@@ -1,7 +1,7 @@
 <template>
   <div class="block"
   @click="onClick(block)"
-  v-bind:style="{ top: `${block.y}px`, left: `${block.x}px`}">
+  v-bind:style="{ top: `${block.y * GRID_SIZE}px`, left: `${block.x * GRID_SIZE}px`}">
     <div
     class="piece"
     v-for="piece in block.pieces"

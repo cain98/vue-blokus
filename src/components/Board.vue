@@ -16,55 +16,26 @@
 
       <!-- Blocks -->
       <block
-        v-for="block in blocks.RED"
+        v-for="block in blocks"
         :team="block.team"
-        :ref="block.id + block.team"
+        :ref="block._id + block.team"
         :block="block"
         :GRID_SIZE="GRID_SIZE"
         :onClick="selectPiece"
-        v-bind:key="block.id + block.team" />
-      <block
-        v-for="block in blocks.BLUE"
-        :team="block.team"
-        :ref="block.id + block.team"
-        :block="block"
-        :GRID_SIZE="GRID_SIZE"
-        :onClick="selectPiece"
-        v-bind:key="block.id + block.team" />
-      <block
-        v-for="block in blocks.GREEN"
-        :team="block.team"
-        :ref="block.id + block.team"
-        :block="block"
-        :GRID_SIZE="GRID_SIZE"
-        :onClick="selectPiece"
-        v-bind:key="block.id + block.team" />
-      <block
-        v-for="block in blocks.YELLOW"
-        :ref="block.id + block.team"
-        :team="block.team"
-        :block="block"
-        :GRID_SIZE="GRID_SIZE"
-        :onClick="selectPiece"
-        v-bind:key="block.id + block.team" />
+        v-bind:key="block._id + block.team" />
+
     </div>
   </div>
 </template>
 
 <script>
-import BLOCKS from '../blocks'
 import cursorPosition from '../utilities/cursorPosition'
-
+import roomService from '../services/room.service'
 import block from './block'
 import config from '../config'
-const TEAMS = {
-  RED: 'RED',
-  BLUE: 'BLUE',
-  GREEN: 'GREEN',
-  YELLOW: 'YELLOW'
-}
 export default {
-  name: 'Index',
+  name: 'Board',
+  props: ['roomId'],
   components: {
     block
   },
@@ -72,19 +43,15 @@ export default {
     connected: function () {
       console.log('socket connected')
     },
-    customEmit: function (val) {
-      console.log('this method fired by socket server. eg: io.emit("customEmit", data)')
+    blockMove: function (res) {
+      console.log('SOCKET SERVER BLOCK MOVE', res)
+      this.moveBlock(res.block)
     }
   },
   data () {
     return {
       GRID_SIZE: config.GRID_SIZE,
-      blocks: {
-        [TEAMS.RED]: BLOCKS(TEAMS.RED),
-        [TEAMS.BLUE]: BLOCKS(TEAMS.BLUE),
-        [TEAMS.GREEN]: BLOCKS(TEAMS.GREEN),
-        [TEAMS.YELLOW]: BLOCKS(TEAMS.YELLOW)
-      },
+      blocks: [],
       rows: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       cols: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       activePiece: false,
@@ -93,6 +60,7 @@ export default {
     }
   },
   mounted () {
+    this.getRoom()
     document.addEventListener('mousemove', () => {
       this.controller()
     }, false)
@@ -106,9 +74,9 @@ export default {
       if (this.activePiece) {
         // Calculate grid positioning
         const mouse = this.mousePosition()
-        const x = Math.round(mouse.x / config.GRID_SIZE) * config.GRID_SIZE
-        const y = Math.round(mouse.y / config.GRID_SIZE) * config.GRID_SIZE
-        const activeBlock = this.blocks[this.activePiece.team].find(x => x.id === this.activePiece.id)
+        const x = Math.round(mouse.x / config.GRID_SIZE)
+        const y = Math.round(mouse.y / config.GRID_SIZE)
+        const activeBlock = this.blocks.find(x => x._id === this.activePiece._id)
         // Trigger ONLY on grid change
         if (x === activeBlock.x && y === activeBlock.y) {
           return
@@ -119,18 +87,23 @@ export default {
         this.$socket.emit('block_move', {block: activeBlock})
       }
     },
+    moveBlock: function (block) {
+      const blockToMove = this.blocks.find(x => x._id === block._id)
+      blockToMove.x = block.x
+      blockToMove.y = block.y
+    },
     mousePosition: function () {
       return cursorPosition()
     },
     getActiveElement: function () {
-      return this.$refs[this.activePiece.id + this.activePiece.team][0].$el
+      return this.$refs[this.activePiece._id + this.activePiece.team][0].$el
     },
     dropBlock: function () {
       // const el = this.getActiveElement()
       // const blockGrid = this.getBlockGrid(el)
     },
     selectPiece: function (block) {
-      if (block.id === this.activePiece.id) {
+      if (block._id === this.activePiece._id) {
         this.unselect()
       } else {
         this.activePiece = block
@@ -149,6 +122,11 @@ export default {
     unselect: function () {
       this.dropBlock()
       this.activePiece = false
+    },
+    getRoom: function () {
+      roomService.getRoom(this.roomId).then(res => {
+        this.blocks = res.data.blocks
+      })
     }
   }
 }
