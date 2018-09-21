@@ -64,7 +64,7 @@
 
 <script>
 import RoomService from '../services/room.service'
-import { setItem, getItem } from '../utilities/localStorage'
+import { setItem } from '../utilities/localStorage'
 import { distanceInWordsStrict } from 'date-fns'
 
 export default {
@@ -81,13 +81,14 @@ export default {
       return distanceInWordsStrict(date, new Date())
     },
     joinRoom: function (id) {
-      RoomService.join({roomId: id, userId: getItem('userId')}).then(res => {
-        setItem('userId', res.data.player._id)
-        this.$message({ type: 'success', message: 'You have joined a room' })
-        this.$router.push({ path: `/room/${res.data.room._id}` })
-      }).catch(e => {
-        this.$message({ type: 'error', message: e })
-      })
+      this.$router.push({ path: `/room/${id}` })
+      // RoomService.join({roomId: id, userId: getItem('userId')}).then(res => {
+      //   setItem('userId', res.data.player._id)
+      //   this.$message({ type: 'success', message: 'You have joined a room' })
+      //   this.$router.push({ path: `/room/${res.data.room._id}` })
+      // }).catch(e => {
+      //   this.$message({ type: 'error', message: e })
+      // })
     },
     createRoom: function (roomName) {
       RoomService.create(roomName).then(res => {

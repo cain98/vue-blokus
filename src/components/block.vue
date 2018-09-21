@@ -56,9 +56,9 @@ export default {
   }
   .helper {
     position: absolute;
-    // outline: 1px solid rgba(255,0,0,0.2);
+    outline: 1px solid rgba(255,0,0,0.2);
     background-size: 20px 20px;
-    // background-image: linear-gradient(to right, #e7e7e7 1px, transparent 1px), linear-gradient(to bottom, #e7e7e7 1px, transparent 1px);
+    background-image: linear-gradient(to right, #e7e7e7 1px, transparent 1px), linear-gradient(to bottom, #e7e7e7 1px, transparent 1px);
   }
   .block-id {
     position: absolute;

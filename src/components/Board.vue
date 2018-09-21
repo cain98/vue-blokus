@@ -1,14 +1,6 @@
 <template>
   <div>
     <div class="container" :class="{ active: activeBlock !== false}">
-
-      <!-- Player information -->
-      <div class="player-info">
-        Player ID: {{ player.id }} <br />
-        Team: {{ player.team }} <br />
-        <button @click="leaveRoom()">leave game</button>
-      </div>
-
       <!-- Click Overlay -->
       <div class="click-overlay" v-if="activeBlock" @click="unselect()">
       </div>
@@ -39,7 +31,7 @@
 import intersectionWith from 'lodash/intersectionWith'
 import isEqual from 'lodash/isEqual'
 import cursorPosition from '../utilities/cursorPosition'
-import roomService from '../services/room.service'
+// import roomService from '../services/room.service'
 import block from './block'
 import { GRID_SIZE } from '../../config'
 const userId = window.localStorage.getItem('userId')
@@ -51,12 +43,6 @@ export default {
     block
   },
   sockets: {
-    connected: function () {
-      console.log('socket connected')
-    },
-    disconnected: function () {
-      console.log('socket disconnected')
-    },
     blockMove: function (res) {
       console.log('SOCKET SERVER BLOCK MOVE', res)
       this.moveBlock(res.block)
@@ -65,6 +51,13 @@ export default {
       const blockToEdit = this.blocks.find(x => x._id === res.block._id)
       blockToEdit.grid = res.block.grid
       blockToEdit.pieces = res.block.pieces
+    },
+    playerJoined: function (res) {
+      console.log('played joined board!', res)
+      this.blocks = res.room.blocks
+    },
+    roomJoined: function (res) {
+      this.blocks = res.room.blocks
     }
   },
   data () {
@@ -73,12 +66,10 @@ export default {
       blocks: [],
       rows: Array.apply(null, Array(20)).map(function (x, i) { return i }),
       cols: Array.apply(null, Array(20)).map(function (x, i) { return i }),
-      activeBlock: false,
-      player: {}
+      activeBlock: false
     }
   },
   mounted () {
-    this.joinRoom()
     document.addEventListener('mousemove', (e) => {
       this.mouseController(e)
     }, false)
@@ -159,29 +150,6 @@ export default {
           type: 'warning'
         })
       }
-    },
-    joinRoom: function () {
-      roomService.join({
-        roomId: this.roomId,
-        userId: window.localStorage.getItem('userId')
-      }).then(res => {
-        window.localStorage.setItem('userId', res.data.player._id)
-        this.player = {
-          id: res.data.player._id,
-          team: res.data.player.team
-        }
-        this.blocks = res.data.room.blocks
-      })
-    },
-    leaveRoom: async function () {
-      await this.$confirm('Are you sure you want to leave?', 'Warning', {
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Cancel',
-        type: 'warning',
-        center: true
-      }).then(() => {
-        this.$router.push({ path: `/` })
-      })
     },
     findNearbyBlocks: function (block) {
       const areaRadius = 1
@@ -275,15 +243,6 @@ $block-size: 20px;
   .row:first-child .grid:last-child {
     background: rgba(0, 0, 255, 0.45);
   }
-}
-
-.player-info {
-  position: fixed;
-  right: 0;
-  text-align: right;
-  bottom: 0px;
-  text-transform: capitalize;
-  font-size: 12px;
 }
 
 .dragging .piece, .block:hover {
